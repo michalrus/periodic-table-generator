@@ -1,0 +1,13 @@
+# Rust
+debug/
+target/
+**/*.rs.bk
+*.pdb
+.env
+
+# Nix
+result
+result-*
+
+# direnv
+.direnv/
