@@ -1,4 +1,5 @@
 [dependencies]
+clap = {version = "4.5.20", features = ["derive"]}
 
 [package]
 name = "periodic-table-generator"
