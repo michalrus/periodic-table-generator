@@ -4,11 +4,11 @@ use std::fmt::Write;
 mod cli;
 
 fn main() {
-    let args = crate::cli::Args::parse();
+    let args = cli::Args::parse();
 
-    let elements = new_elements(args.wide, args.helium_in_2);
+    let elements = new_elements(&args);
 
-    println!("{}", generate_svg(&elements, args.no_symbols, args.no_z));
+    println!("{}", generate_svg(&elements, &args));
 }
 
 #[derive(Debug)]
@@ -21,7 +21,7 @@ struct Element {
     graphical_y: u8,
 }
 
-fn new_elements(wide: bool, helium_in_2: bool) -> HashMap<u8, Element> {
+fn new_elements(args: &cli::Args) -> HashMap<u8, Element> {
     [
         "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S",
         "Cl", "Ar", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga",
@@ -93,10 +93,10 @@ fn new_elements(wide: bool, helium_in_2: bool) -> HashMap<u8, Element> {
             _ => (0, None), // 0, 0 for invalid atomic numbers
         };
 
-        let (graphical_y, graphical_x) = if !wide {
+        let (graphical_y, graphical_x) = if !args.wide {
             match (period, group) {
                 (1, Some(18)) => {
-                    if helium_in_2 {
+                    if args.helium_in_2 {
                         (1, 2)
                     } else {
                         (1, 18)
@@ -110,7 +110,7 @@ fn new_elements(wide: bool, helium_in_2: bool) -> HashMap<u8, Element> {
         } else {
             match (period, group) {
                 (1, Some(18)) => {
-                    if helium_in_2 {
+                    if args.helium_in_2 {
                         (1, 2)
                     } else {
                         (1, 32)
@@ -139,7 +139,7 @@ fn new_elements(wide: bool, helium_in_2: bool) -> HashMap<u8, Element> {
     .collect()
 }
 
-fn generate_svg(elements: &HashMap<u8, Element>, no_symbols: bool, no_z: bool) -> String {
+fn generate_svg(elements: &HashMap<u8, Element>, args: &cli::Args) -> String {
     let width: u32 = 50;
 
     let max_x = elements
@@ -162,15 +162,23 @@ fn generate_svg(elements: &HashMap<u8, Element>, no_symbols: bool, no_z: bool) -
     writeln!(
         svg,
         r#"
+  <![CDATA[
+    Created with https://github.com/michalrus/periodic-table-generator
+    ❯ periodic-table-generator {}
+  ]]>
   <style>
     .elements text.Z {{ font-size: {}px; text-anchor: start; alignment-baseline: before-edge; }}
     .elements text:not(Z) {{ font-size: {}px; text-anchor: middle; alignment-baseline: middle; }}
     .elements rect {{ stroke: black; stroke-width: 2; fill: white; width: {}px; height: {}px; }}
+    .group-numbers text, .period-numbers text {{ font-size: {}px; fill: #808080; text-anchor: middle; alignment-baseline: middle; }}
+    .mark {{ fill: #ffcccc !important; }}
   </style>"#,
+        cli::escaped_argv(),
         width / 4,
         width / 2,
         width,
-        width
+        width,
+        width * 3/8,
     )
     .unwrap();
 
@@ -188,7 +196,7 @@ fn generate_svg(elements: &HashMap<u8, Element>, no_symbols: bool, no_z: bool) -
             let y = element.graphical_y as u32 * width;
             write!(svg, r#"    <rect x="{}" y="{}"/>"#, x, y).unwrap();
 
-            if !no_z {
+            if !args.no_z {
                 let text_x = x + (3 * width / 50);
                 let text_y = y + (2 * width / 50);
                 write!(
@@ -199,7 +207,7 @@ fn generate_svg(elements: &HashMap<u8, Element>, no_symbols: bool, no_z: bool) -
                 .unwrap();
             }
 
-            if no_symbols {
+            if args.no_symbols {
                 writeln!(svg).unwrap();
             } else {
                 let text_x = x + width / 2;
@@ -215,6 +223,53 @@ fn generate_svg(elements: &HashMap<u8, Element>, no_symbols: bool, no_z: bool) -
     }
 
     svg.push_str("  </g>\n");
+
+    if !args.no_group_numbers {
+        write!(svg, r#"  <g class="group-numbers">"#).unwrap();
+
+        let locations = (1..=7).flat_map(|group| match group {
+            6..=7 if !args.wide => vec![
+                (group, 0 * width, group * width),
+                (group, 3 * width, (group + 3) * width),
+            ],
+            _ => vec![(group, 0 * width, group * width)],
+        });
+
+        for (group, x, y) in locations {
+            let text_x = x + width * 5 / 8;
+            let text_y = y + width / 2;
+            write!(
+                svg,
+                r#"<text x="{}" y="{}">{}</text>"#,
+                text_x, text_y, group
+            )
+            .unwrap();
+        }
+        svg.push_str("</g>\n");
+    }
+
+    if !args.no_period_numbers {
+        write!(svg, r#"  <g class="period-numbers">"#).unwrap();
+
+        let locations = (1..=18).flat_map(|period| match period {
+            3 if !args.wide => vec![(period, period * width, 0), (period, 18 * width, 8 * width)],
+            3.. if args.wide => vec![(period, (period + 14) * width, 0)],
+            _ => vec![(period, period * width, 0)],
+        });
+
+        for (period, x, y) in locations {
+            let text_x = x + width / 2;
+            let text_y = y + width * 5 / 8;
+            write!(
+                svg,
+                r#"<text x="{}" y="{}">{}</text>"#,
+                text_x, text_y, period
+            )
+            .unwrap();
+        }
+        svg.push_str("</g>\n");
+    }
+
     svg.push_str("</svg>\n");
 
     svg

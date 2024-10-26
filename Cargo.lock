@@ -114,6 +114,7 @@ name = "periodic-table-generator"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "shell-escape",
 ]
 
 [[package]]
@@ -133,6 +134,12 @@ checksum = "b5b9d34b8991d19d98081b46eacdd8eb58c6f2b201139f7c5f643cc155a633af"
 dependencies = [
  "proc-macro2",
 ]
+
+[[package]]
+name = "shell-escape"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "45bb67a18fa91266cc7807181f62f9178a6873bfad7dc788c42e6430db40184f"
 
 [[package]]
 name = "strsim"

@@ -1,4 +1,5 @@
 use clap::{ArgAction, Parser};
+use std::borrow::Cow;
 use std::collections::HashSet;
 
 /// Periodic table generator that can be used to generate SVGs for spaced-repetition study in Anki.
@@ -12,6 +13,14 @@ pub struct Args {
     /// Hide atomic numbers
     #[arg(long)]
     pub no_z: bool,
+
+    /// Hide group numbers
+    #[arg(long)]
+    pub no_group_numbers: bool,
+
+    /// Hide period numbers
+    #[arg(long)]
+    pub no_period_numbers: bool,
 
     /// Draw it wide instead of separate lanthanoids and actinoids
     #[arg(long)]
@@ -95,4 +104,13 @@ fn parse_mark_range(min: u32, max: u32) -> impl Fn(&str) -> Result<MarkRange, St
 
         Ok(MarkRange { color, ids })
     }
+}
+
+/// Used for SVG comments (future reproducibility).
+pub fn escaped_argv() -> String {
+    std::env::args()
+        .skip(1)
+        .map(|arg| shell_escape::escape(Cow::from(arg)).to_string())
+        .collect::<Vec<String>>()
+        .join(" ")
 }
