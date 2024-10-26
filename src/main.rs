@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::Write;
 
 mod cli;
 
@@ -7,13 +8,7 @@ fn main() {
 
     let elements = new_elements(args.wide, args.helium_in_2);
 
-    {
-        let mut elements_vec: Vec<_> = elements.iter().collect();
-        elements_vec.sort_by_key(|&(atomic_number, _)| atomic_number);
-        for (atomic_number, element) in elements_vec {
-            println!("{:?}: {:?}", atomic_number, element);
-        }
-    }
+    println!("{}", generate_svg(&elements, args.no_symbols));
 }
 
 #[derive(Debug)]
@@ -118,11 +113,11 @@ fn new_elements(wide: bool, helium_in_2: bool) -> HashMap<u8, Element> {
                     if helium_in_2 {
                         (1, 2)
                     } else {
-                        (1, 18)
+                        (1, 32)
                     }
                 }
-                (p, Some(g)) if g <= 2 => (period, g),
-                (p, Some(g)) => (period, g + 14),
+                (p, Some(g)) if g <= 2 => (p, g),
+                (p, Some(g)) => (p, g + 14),
                 (6, None) => (period, 3 + atomic_number - 57),
                 (7, None) => (period, 3 + atomic_number - 89),
                 _ => (0, 0),
@@ -142,4 +137,71 @@ fn new_elements(wide: bool, helium_in_2: bool) -> HashMap<u8, Element> {
         )
     })
     .collect()
+}
+
+fn generate_svg(elements: &HashMap<u8, Element>, no_symbols: bool) -> String {
+    let width: u32 = 50;
+
+    let max_x = elements
+        .values()
+        .map(|element| element.graphical_x)
+        .max()
+        .unwrap_or(0);
+    let max_y = elements
+        .values()
+        .map(|element| element.graphical_y)
+        .max()
+        .unwrap_or(0);
+
+    let mut svg = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{}" height="{}">"#,
+        (max_x as u32 + 2) * width,
+        (max_y as u32 + 2) * width,
+    );
+
+    writeln!(
+        svg,
+        r#"
+  <style>
+    .elements text {{ font-size: {}px; text-anchor: middle; alignment-baseline: middle; }}
+    .elements rect {{ stroke: black; stroke-width: 2; fill: white; width: {}px; height: {}px; }}
+  </style>"#,
+        width / 2,
+        width,
+        width
+    )
+    .unwrap();
+
+    writeln!(svg, r#"  <g class="elements">"#).unwrap();
+
+    let sorted_keys = {
+        let mut keys: Vec<u8> = elements.keys().cloned().collect();
+        keys.sort();
+        keys
+    };
+
+    for atomic_number in sorted_keys.into_iter() {
+        if let Some(element) = elements.get(&atomic_number) {
+            let x = element.graphical_x as u32 * width;
+            let y = element.graphical_y as u32 * width;
+            write!(svg, r#"    <rect x="{}" y="{}"/>"#, x, y).unwrap();
+            if no_symbols {
+                writeln!(svg).unwrap();
+            } else {
+                let text_x = x + width / 2;
+                let text_y = y + width / 2;
+                writeln!(
+                    svg,
+                    r#"<text x="{}" y="{}">{}</text>"#,
+                    text_x, text_y, element.symbol
+                )
+                .unwrap();
+            }
+        }
+    }
+
+    svg.push_str("  </g>\n");
+    svg.push_str("</svg>\n");
+
+    svg
 }
