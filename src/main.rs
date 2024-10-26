@@ -8,17 +8,22 @@ fn main() {
 
     let elements = new_elements(&args);
 
-    println!("{}", generate_svg(&elements, &args));
+    let (elements, colors) = calculate_colors(&elements, &args);
+
+    println!("{}", generate_svg(&elements, &colors, &args));
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Element {
     atomic_number: u8,
     symbol: String,
     group: Option<u8>,
     period: u8,
+    /// 1=s, 2=p, 3=d, 4=f
+    block: u8,
     graphical_x: u8,
     graphical_y: u8,
+    marks: Vec<String>,
 }
 
 fn new_elements(args: &cli::Args) -> HashMap<u8, Element> {
@@ -93,6 +98,14 @@ fn new_elements(args: &cli::Args) -> HashMap<u8, Element> {
             _ => (0, None), // 0, 0 for invalid atomic numbers
         };
 
+        let block = match (group, period, atomic_number) {
+            (Some(1..=2), _, _) | (_, _, 2) => 1,
+            (Some(3..=12), _, _) => 2,
+            (Some(13..=18), _, _) => 3,
+            (None, _, _) => 4,
+            _ => panic!("impossible"),
+        };
+
         let (graphical_y, graphical_x) = if !args.wide {
             match (period, group) {
                 (1, Some(18)) => {
@@ -131,15 +144,83 @@ fn new_elements(args: &cli::Args) -> HashMap<u8, Element> {
                 symbol: symbol.to_string(),
                 group,
                 period,
+                block,
                 graphical_x,
                 graphical_y,
+                marks: vec![],
             },
         )
     })
     .collect()
 }
 
-fn generate_svg(elements: &HashMap<u8, Element>, args: &cli::Args) -> String {
+fn calculate_colors(
+    elements: &HashMap<u8, Element>,
+    args: &cli::Args,
+) -> (
+    HashMap<u8, Element>,
+    HashMap<String /* class name */, String /* color */>,
+) {
+    let mut mark_counter = 0;
+
+    // FIXME: use newtype for color and class
+
+    let mut colors: HashMap<String /* color */, String /* class */> = HashMap::new();
+
+    (
+        elements
+            .iter()
+            .map(|(&atomic_number, element)| {
+                let mut el = element.clone();
+
+                let mut do_mark = |mrk: &cli::MarkRange| {
+                    let class = colors.entry(mrk.color.clone()).or_insert_with(|| {
+                        format!("mark-{}", {
+                            mark_counter += 1;
+                            mark_counter
+                        })
+                    });
+                    el.marks.push(class.clone());
+                };
+
+                for mrk in &args.mark_z {
+                    if mrk.ids.contains(&(el.atomic_number as u32)) {
+                        do_mark(mrk);
+                    }
+                }
+
+                for mrk in &args.mark_group {
+                    if let Some(group) = el.group {
+                        if mrk.ids.contains(&(group as u32)) {
+                            do_mark(mrk);
+                        }
+                    }
+                }
+
+                for mrk in &args.mark_period {
+                    if mrk.ids.contains(&(el.period as u32)) {
+                        do_mark(mrk);
+                    }
+                }
+
+                for mrk in &args.mark_block {
+                    if mrk.ids.contains(&(el.block as u32)) {
+                        do_mark(mrk);
+                    }
+                }
+
+                (atomic_number, el)
+            })
+            .collect(),
+        colors.into_iter().map(|(k, v)| (v, k)).collect(),
+    )
+}
+
+fn generate_svg(
+    elements: &HashMap<u8, Element>,
+    colors: &HashMap<String, String>,
+    args: &cli::Args,
+) -> String {
     let width: u32 = 50;
 
     let max_x = elements
@@ -169,10 +250,8 @@ fn generate_svg(elements: &HashMap<u8, Element>, args: &cli::Args) -> String {
   <style>
     .elements text.Z {{ font-size: {}px; text-anchor: start; alignment-baseline: before-edge; }}
     .elements text:not(Z) {{ font-size: {}px; text-anchor: middle; alignment-baseline: middle; }}
-    .elements rect {{ stroke: black; stroke-width: 2; fill: white; width: {}px; height: {}px; }}
-    .group-numbers text, .period-numbers text {{ font-size: {}px; fill: #808080; text-anchor: middle; alignment-baseline: middle; }}
-    .mark {{ fill: #ffcccc !important; }}
-  </style>"#,
+    .elements rect {{ stroke: black; stroke-width: 1; fill: white; width: {}px; height: {}px; }}
+    .group-numbers text, .period-numbers text {{ font-size: {}px; fill: #808080; text-anchor: middle; alignment-baseline: middle; }}"#,
         cli::escaped_argv(),
         width / 4,
         width / 2,
@@ -182,6 +261,15 @@ fn generate_svg(elements: &HashMap<u8, Element>, args: &cli::Args) -> String {
     )
     .unwrap();
 
+    {
+        let mut colors_sorted = colors.into_iter().collect::<Vec<_>>();
+        colors_sorted.sort();
+        for (mark, color) in colors_sorted {
+            writeln!(svg, r#"    .{} {{ fill: {} !important; }}"#, mark, color).unwrap();
+        }
+    }
+
+    svg.push_str("  </style>\n");
     writeln!(svg, r#"  <g class="elements">"#).unwrap();
 
     let sorted_keys = {
@@ -194,7 +282,18 @@ fn generate_svg(elements: &HashMap<u8, Element>, args: &cli::Args) -> String {
         if let Some(element) = elements.get(&atomic_number) {
             let x = element.graphical_x as u32 * width;
             let y = element.graphical_y as u32 * width;
-            write!(svg, r#"    <rect x="{}" y="{}"/>"#, x, y).unwrap();
+            write!(
+                svg,
+                r#"    <rect x="{}" y="{}"{}/>"#,
+                x,
+                y,
+                if !element.marks.is_empty() {
+                    format!(" class=\"{}\"", element.marks.join(" "))
+                } else {
+                    String::new()
+                }
+            )
+            .unwrap();
 
             if !args.no_z {
                 let text_x = x + (3 * width / 50);
