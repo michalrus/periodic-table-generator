@@ -8,7 +8,11 @@ pub struct Args {
     #[arg(long)]
     pub no_symbols: bool,
 
-    /// Draw it wide instead of lanthanoids and actinoids separately
+    /// Hide atomic numbers
+    #[arg(long)]
+    pub no_z: bool,
+
+    /// Draw it wide instead of separate lanthanoids and actinoids
     #[arg(long)]
     pub wide: bool,
 

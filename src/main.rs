@@ -8,7 +8,7 @@ fn main() {
 
     let elements = new_elements(args.wide, args.helium_in_2);
 
-    println!("{}", generate_svg(&elements, args.no_symbols));
+    println!("{}", generate_svg(&elements, args.no_symbols, args.no_z));
 }
 
 #[derive(Debug)]
@@ -139,7 +139,7 @@ fn new_elements(wide: bool, helium_in_2: bool) -> HashMap<u8, Element> {
     .collect()
 }
 
-fn generate_svg(elements: &HashMap<u8, Element>, no_symbols: bool) -> String {
+fn generate_svg(elements: &HashMap<u8, Element>, no_symbols: bool, no_z: bool) -> String {
     let width: u32 = 50;
 
     let max_x = elements
@@ -163,9 +163,11 @@ fn generate_svg(elements: &HashMap<u8, Element>, no_symbols: bool) -> String {
         svg,
         r#"
   <style>
-    .elements text {{ font-size: {}px; text-anchor: middle; alignment-baseline: middle; }}
+    .elements text.Z {{ font-size: {}px; text-anchor: start; alignment-baseline: before-edge; }}
+    .elements text:not(Z) {{ font-size: {}px; text-anchor: middle; alignment-baseline: middle; }}
     .elements rect {{ stroke: black; stroke-width: 2; fill: white; width: {}px; height: {}px; }}
   </style>"#,
+        width / 4,
         width / 2,
         width,
         width
@@ -185,11 +187,23 @@ fn generate_svg(elements: &HashMap<u8, Element>, no_symbols: bool) -> String {
             let x = element.graphical_x as u32 * width;
             let y = element.graphical_y as u32 * width;
             write!(svg, r#"    <rect x="{}" y="{}"/>"#, x, y).unwrap();
+
+            if !no_z {
+                let text_x = x + (3 * width / 50);
+                let text_y = y + (2 * width / 50);
+                write!(
+                    svg,
+                    r#"<text x="{}" y="{}" class="Z">{}</text>"#,
+                    text_x, text_y, atomic_number
+                )
+                .unwrap();
+            }
+
             if no_symbols {
                 writeln!(svg).unwrap();
             } else {
                 let text_x = x + width / 2;
-                let text_y = y + width / 2;
+                let text_y = y + width / 2 + (3 * width / 50);
                 writeln!(
                     svg,
                     r#"<text x="{}" y="{}">{}</text>"#,
