@@ -22,7 +22,7 @@ pub struct Args {
     #[arg(long)]
     pub no_period_numbers: bool,
 
-    /// Draw it wide instead of separate lanthanoids and actinoids
+    /// Draw it wide instead of separating lanthanoids and actinoids
     #[arg(long)]
     pub wide: bool,
 
@@ -46,9 +46,13 @@ pub struct Args {
     #[arg(long, value_name = "COLOR:RANGE1[,RANGE2…]", value_parser = parse_mark_range(1,7), action = ArgAction::Append )]
     pub mark_period: Vec<MarkRange>,
 
-    /// Like --mark-z but for blocks (1=s, 2=p, 3=d, 4=f)
-    #[arg(long, value_name = "COLOR:RANGE1[,RANGE2…]", value_parser = parse_mark_range(1,4), action = ArgAction::Append )]
+    /// Like --mark-z but for blocks (0=s, 1=p, 2=d, 3=f)
+    #[arg(long, value_name = "COLOR:RANGE1[,RANGE2…]", value_parser = parse_mark_range(0,3), action = ArgAction::Append )]
     pub mark_block: Vec<MarkRange>,
+
+    /// Don't maximally downsize the viewbox to the bounding box of the table
+    #[arg(long)]
+    pub pretty_padding: bool,
 }
 
 impl Args {

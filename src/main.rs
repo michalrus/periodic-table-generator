@@ -99,10 +99,10 @@ fn new_elements(args: &cli::Args) -> HashMap<u8, Element> {
         };
 
         let block = match (group, period, atomic_number) {
-            (Some(1..=2), _, _) | (_, _, 2) => 1,
-            (Some(3..=12), _, _) => 2,
-            (Some(13..=18), _, _) => 3,
-            (None, _, _) => 4,
+            (Some(1..=2), _, _) | (_, _, 2) => 0,
+            (Some(3..=12), _, _) => 1,
+            (Some(13..=18), _, _) => 2,
+            (None, _, _) => 3,
             _ => panic!("impossible"),
         };
 
@@ -222,6 +222,7 @@ fn generate_svg(
     args: &cli::Args,
 ) -> String {
     let width: u32 = 50;
+    let stroke_width: u32 = 1;
 
     let max_x = elements
         .values()
@@ -234,10 +235,20 @@ fn generate_svg(
         .max()
         .unwrap_or(0);
 
+    let (viewbox_x, viewbox_y, viewbox_width, viewbox_height) = if args.pretty_padding {
+        (0, 0, (max_x as u32 + 2) * width, (max_y as u32 + 2) * width)
+    } else {
+        (
+            width / 2,
+            width * 2 / 5,
+            (max_x as u32 + 2) * width - (width * 3 / 2) + stroke_width,
+            (max_y as u32 + 2) * width - (width * (5 + 2) / 5) + stroke_width,
+        )
+    };
+
     let mut svg = format!(
-        r#"<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewbox="0 0 {} {}">"#,
-        (max_x as u32 + 2) * width,
-        (max_y as u32 + 2) * width,
+        r#"<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="{} {} {} {}">"#,
+        viewbox_x, viewbox_y, viewbox_width, viewbox_height,
     );
 
     writeln!(
@@ -250,11 +261,12 @@ fn generate_svg(
   <style>
     .elements text.Z {{ font-size: {}px; text-anchor: start; alignment-baseline: before-edge; }}
     .elements text:not(Z) {{ font-size: {}px; text-anchor: middle; alignment-baseline: middle; }}
-    .elements rect {{ stroke: black; stroke-width: 1; fill: white; width: {}px; height: {}px; }}
+    .elements rect {{ stroke: black; stroke-width: {}; fill: white; width: {}px; height: {}px; }}
     .group-numbers text, .period-numbers text {{ font-size: {}px; fill: #808080; text-anchor: middle; alignment-baseline: middle; }}"#,
         cli::escaped_argv(),
         width / 4,
         width / 2,
+        stroke_width,
         width,
         width,
         width * 3/8,
