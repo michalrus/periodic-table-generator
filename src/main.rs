@@ -100,8 +100,8 @@ fn new_elements(args: &cli::Args) -> HashMap<u8, Element> {
 
         let block = match (group, period, atomic_number) {
             (Some(1..=2), _, _) | (_, _, 2) => 0,
-            (Some(3..=12), _, _) => 1,
-            (Some(13..=18), _, _) => 2,
+            (Some(13..=18), _, _) => 1,
+            (Some(3..=12), _, _) => 2,
             (None, _, _) => 3,
             _ => panic!("impossible"),
         };
