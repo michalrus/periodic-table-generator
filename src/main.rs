@@ -167,11 +167,17 @@ fn calculate_colors(
 
     let mut colors: HashMap<String /* color */, String /* class */> = HashMap::new();
 
+    let sorted_atomic_numbers = {
+        let mut tmp = elements.keys().collect::<Vec<_>>();
+        tmp.sort();
+        tmp
+    };
+
     (
-        elements
+        sorted_atomic_numbers
             .iter()
-            .map(|(&atomic_number, element)| {
-                let mut el = element.clone();
+            .map(|&&atomic_number| {
+                let mut el = elements[&atomic_number].clone();
 
                 let mut do_mark = |mrk: &cli::MarkRange| {
                     let class = colors.entry(mrk.color.clone()).or_insert_with(|| {
