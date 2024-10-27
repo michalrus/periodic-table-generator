@@ -235,7 +235,7 @@ fn generate_svg(
         .unwrap_or(0);
 
     let mut svg = format!(
-        r#"<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{}" height="{}">"#,
+        r#"<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewbox="0 0 {} {}">"#,
         (max_x as u32 + 2) * width,
         (max_y as u32 + 2) * width,
     );
