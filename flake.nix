@@ -31,9 +31,11 @@
         pkgs,
         ...
       }: {
-        packages =
+        packages = let
+          internal = inputs.self.internal.${system};
+        in
           {
-            default = inputs.self.internal.${system}.package;
+            default = internal.package;
           }
           // (inputs.nixpkgs.lib.optionalAttrs (system == "x86_64-linux") {
             default-x86_64-windows = inputs.self.internal.x86_64-windows.package;

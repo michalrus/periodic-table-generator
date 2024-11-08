@@ -24,5 +24,10 @@ in rec {
   package = craneLib.buildPackage (commonArgs
     // {
       inherit cargoArtifacts;
+      meta = {
+        description = "Periodic table generator in the SVG format";
+        homepage = "https://github.com/michalrus/periodic-table-generator";
+        license = lib.licenses.asl20;
+      };
     });
 }

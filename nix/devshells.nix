@@ -19,6 +19,7 @@ in {
     {package = inputs.self.formatter.${pkgs.system};}
     {package = config.language.rust.packageSet.cargo;}
     {package = pkgs.rust-analyzer;}
+    {package = internal.package;}
   ];
 
   language.c.compiler =

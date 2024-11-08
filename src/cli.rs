@@ -2,7 +2,7 @@ use clap::{ArgAction, Parser};
 use std::borrow::Cow;
 use std::collections::HashSet;
 
-/// Periodic table generator that can be used to generate SVGs for spaced-repetition study in Anki.
+/// Periodic table generator in the SVG format.
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
