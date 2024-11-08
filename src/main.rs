@@ -387,7 +387,7 @@ fn generate_svg(
         svg.push_str("</g>\n");
     }
 
-    svg.push_str("</svg>\n");
+    svg.push_str("</svg>");
 
     svg
 }
