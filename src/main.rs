@@ -260,10 +260,12 @@ fn generate_svg(
     writeln!(
         svg,
         r#"
-  <![CDATA[
-    Created with https://github.com/michalrus/periodic-table-generator
-    ❯ periodic-table-generator {}
-  ]]>
+  <desc>
+    <![CDATA[
+      Created with https://github.com/michalrus/periodic-table-generator
+      ❯ periodic-table-generator {}
+    ]]>
+  </desc>
   <style>
     .elements text.Z {{ font-size: {}px; text-anchor: start; alignment-baseline: before-edge; }}
     .elements text:not(Z) {{ font-size: {}px; text-anchor: middle; alignment-baseline: middle; }}
