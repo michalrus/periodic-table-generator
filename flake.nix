@@ -36,6 +36,7 @@
         in
           {
             default = internal.package;
+            inherit (internal) chemfig2svg;
           }
           // (inputs.nixpkgs.lib.optionalAttrs (system == "x86_64-linux") {
             default-x86_64-windows = inputs.self.internal.x86_64-windows.package;
@@ -47,6 +48,7 @@
           projectRootFile = "flake.nix";
           programs.alejandra.enable = true;
           programs.rustfmt.enable = true;
+          programs.shfmt.enable = true;
           programs.taplo.enable = true;
           programs.yamlfmt.enable = true;
         };

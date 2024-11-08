@@ -20,6 +20,7 @@ in {
     {package = config.language.rust.packageSet.cargo;}
     {package = pkgs.rust-analyzer;}
     {package = internal.package;}
+    {package = internal.chemfig2svg;}
   ];
 
   language.c.compiler =
