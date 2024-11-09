@@ -71,17 +71,15 @@ if ! the_log=$(dvisvgm </dev/null 2>&1 --currentcolor --optimize=all --bbox="${m
 fi
 
 desc_content="
-      Created with https://github.com/michalrus/periodic-table-generator
-      ❯ tikz2svg $escaped_args
+    Created with https://github.com/michalrus/periodic-table-generator
+    ❯ tikz2svg $escaped_args
 "
 
 xmlstarlet >&2 ed -L -N ns="http://www.w3.org/2000/svg" \
   -d '/ns:svg/@width' \
   -d '/ns:svg/@height' \
   -d '/ns:svg/ns:defs/ns:font' \
-  -i "/ns:svg/*[1]" -t elem -n "desc" -v "" \
-  -s "/ns:svg/desc" -t elem -n "text" -v "" \
-  -r "/ns:svg/desc/text" -v "![CDATA[$desc_content    ]]" \
+  -i "/ns:svg/*[1]" -t elem -n "desc" -v "$desc_content  " \
   tikz_expr.svg
 
 # IUPAC recommends sans-serif:

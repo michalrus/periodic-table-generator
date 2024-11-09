@@ -261,17 +261,15 @@ fn generate_svg(
         svg,
         r#"
   <desc>
-    <![CDATA[
-      Created with https://github.com/michalrus/periodic-table-generator
-      ❯ periodic-table-generator {}
-    ]]>
+    Created with https://github.com/michalrus/periodic-table-generator
+    ❯ periodic-table-generator {}
   </desc>
   <style>
     .elements text.Z {{ font-size: {}px; text-anchor: start; alignment-baseline: before-edge; }}
     .elements text:not(Z) {{ font-size: {}px; text-anchor: middle; alignment-baseline: middle; }}
     .elements rect {{ stroke: black; stroke-width: {}; fill: white; width: {}px; height: {}px; }}
     .group-numbers text, .period-numbers text {{ font-size: {}px; fill: #808080; text-anchor: middle; alignment-baseline: middle; }}"#,
-        cli::escaped_argv(),
+        cli::escaped_argv().replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;"),
         width / 4,
         width / 2,
         stroke_width,
