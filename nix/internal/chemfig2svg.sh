@@ -65,12 +65,12 @@ ${chemfig_expr}
 \end{document}
 EOL
 
-if ! the_log=$(latex 2>&1 chemfig_expr.tex); then
+if ! the_log=$(latex </dev/null 2>&1 chemfig_expr.tex); then
   cat >&2 <<<"$the_log"
   exit 1
 fi
 
-if ! the_log=$(dvisvgm 2>&1 --bbox="${margin}:dvi" chemfig_expr.dvi); then
+if ! the_log=$(dvisvgm </dev/null 2>&1 --bbox="${margin}:dvi" chemfig_expr.dvi); then
   cat >&2 <<<"$the_log"
   exit 1
 fi
