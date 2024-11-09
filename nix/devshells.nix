@@ -18,6 +18,7 @@ in {
   commands = [
     {package = internal.package;}
     {package = internal.chemfig2svg;}
+    {package = internal.tikz2svg;}
     {
       package = inputs.self.formatter.${pkgs.system};
       category = "dev";

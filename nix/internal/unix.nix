@@ -31,24 +31,33 @@ in rec {
       };
     });
 
+  latexRuntimeInputs = [
+    (pkgs.texlive.withPackages (ps:
+      with ps; [
+        scheme-small
+        chemfig
+        simplekv
+        standalone
+        dvisvgm
+      ]))
+    pkgs.xmlstarlet
+    pkgs.coreutils
+    pkgs.stdenv.shell
+    pkgs.gnused
+    pkgs.getopt
+  ];
+
   chemfig2svg = pkgs.writeShellApplication {
     name = "chemfig2svg";
-    runtimeInputs = [
-      (pkgs.texlive.withPackages (ps:
-        with ps; [
-          scheme-small
-          chemfig
-          simplekv
-          standalone
-          dvisvgm
-        ]))
-      pkgs.xmlstarlet
-      pkgs.coreutils
-      pkgs.stdenv.shell
-      pkgs.gnused
-      pkgs.getopt
-    ];
+    runtimeInputs = latexRuntimeInputs;
     text = builtins.readFile ./chemfig2svg.sh;
     derivationArgs.meta.description = "Converts LaTeX chemfig expressions to SVG";
+  };
+
+  tikz2svg = pkgs.writeShellApplication {
+    name = "tikz2svg";
+    runtimeInputs = latexRuntimeInputs;
+    text = builtins.readFile ./tikz2svg.sh;
+    derivationArgs.meta.description = "Converts LaTeX TikZ expressions to SVG";
   };
 }
