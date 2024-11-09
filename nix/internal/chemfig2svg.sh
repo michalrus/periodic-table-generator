@@ -70,7 +70,7 @@ if ! the_log=$(latex </dev/null 2>&1 chemfig_expr.tex); then
   exit 1
 fi
 
-if ! the_log=$(dvisvgm </dev/null 2>&1 --bbox="${margin}:dvi" chemfig_expr.dvi); then
+if ! the_log=$(dvisvgm </dev/null 2>&1 --currentcolor --optimize=all --bbox="${margin}:dvi" chemfig_expr.dvi); then
   cat >&2 <<<"$the_log"
   exit 1
 fi
@@ -89,6 +89,7 @@ xmlstarlet >&2 ed -L -N ns="http://www.w3.org/2000/svg" \
   -r "/ns:svg/desc/text" -v "![CDATA[$desc_content    ]]" \
   chemfig_expr.svg
 
+# IUPAC recommends sans-serif:
 sed >&2 -r 's/font-family:[^;]*;/font-family:sans-serif;/g' -i chemfig_expr.svg
 
 # An xmlstarlet bug:
