@@ -3,11 +3,11 @@
 set -euo pipefail
 
 usage() {
-  echo >&2 "Usage: chemfig2svg [--atom-sep <NUMBER>] [--margin <NUMBER>] <chemfig expression>" >&2
+  echo >&2 "Usage: chemfig2svg [--atom-sep <NUM_PT>] [--line-width <NUM_PT>] [--margin <NUM_PT>] <CHEMFIG_EXPR>" >&2
   exit 1
 }
 
-if ! options=$(getopt -o '' --long atom-sep:,margin: -- "$@"); then
+if ! options=$(getopt -o '' --long atom-sep:,line-width:,margin: -- "$@"); then
   usage
 fi
 
@@ -21,12 +21,17 @@ for arg in "$@"; do
 done
 
 atom_sep=25
+line_width=0.8
 margin=5
 
 while true; do
   case "$1" in
   --atom-sep)
     atom_sep="$2"
+    shift 2
+    ;;
+  --line-width)
+    line_width="$2"
     shift 2
     ;;
   --margin)
@@ -58,7 +63,7 @@ cat >chemfig_expr.tex <<EOL
 \documentclass[margin=${margin}]{standalone}
 \usepackage{chemfig}
 \begin{document}
-\setchemfig{atom sep=${atom_sep}pt}
+\setchemfig{atom sep=${atom_sep}pt, bond style={line width=${line_width}pt}}
 \chemfig{
 ${chemfig_expr}
 }
