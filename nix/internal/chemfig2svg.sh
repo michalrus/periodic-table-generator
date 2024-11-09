@@ -16,6 +16,7 @@ eval set -- "$options"
 # For later reproduction:
 escaped_args=""
 for arg in "$@"; do
+  if [ "$escaped_args" == "" ] && [ "$arg" == "--" ]; then continue; fi
   escaped_arg="'${arg//\'/\'\\\'\'}'"
   escaped_args+="$escaped_arg "
 done

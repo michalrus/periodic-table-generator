@@ -31,8 +31,9 @@ in rec {
       };
     });
 
-  chemfig2svg = let
-    path = [
+  chemfig2svg = pkgs.writeShellApplication {
+    name = "chemfig2svg";
+    runtimeInputs = [
       (pkgs.texlive.withPackages (ps:
         with ps; [
           scheme-small
@@ -47,10 +48,7 @@ in rec {
       pkgs.gnused
       pkgs.getopt
     ];
-  in
-    pkgs.writeShellScriptBin "chemfig2svg" ''
-      export PATH=${lib.makeBinPath path}
-      ${builtins.readFile ./chemfig2svg.sh}
-    ''
-    // {meta.description = "Converts LaTeX chemfig expressions to SVG";};
+    text = builtins.readFile ./chemfig2svg.sh;
+    derivationArgs.meta.description = "Converts LaTeX chemfig expressions to SVG";
+  };
 }

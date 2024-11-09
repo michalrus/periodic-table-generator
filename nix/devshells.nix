@@ -16,11 +16,25 @@ in {
   devshell.packages = [];
 
   commands = [
-    {package = inputs.self.formatter.${pkgs.system};}
-    {package = config.language.rust.packageSet.cargo;}
-    {package = pkgs.rust-analyzer;}
     {package = internal.package;}
     {package = internal.chemfig2svg;}
+    {
+      package = inputs.self.formatter.${pkgs.system};
+      category = "dev";
+    }
+    {
+      package = config.language.rust.packageSet.cargo;
+      category = "dev";
+    }
+    {
+      package = pkgs.rust-analyzer;
+      category = "dev";
+    }
+    {
+      package = pkgs.shellcheck;
+      name = "shellcheck";
+      category = "dev";
+    }
   ];
 
   language.c.compiler =
