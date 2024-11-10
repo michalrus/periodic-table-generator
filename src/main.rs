@@ -2,163 +2,80 @@ use std::collections::HashMap;
 use std::fmt::Write;
 
 mod cli;
+mod elements;
 
 fn main() {
     let args = cli::Args::parse();
 
-    let elements = new_elements(&args);
+    let tiles = make_tiles(&args);
 
-    let (elements, colors) = calculate_colors(&elements, &args);
+    let (tiles, colors) = calculate_colors(&tiles, &args);
 
-    println!("{}", generate_svg(&elements, &colors, &args));
+    println!("{}", generate_svg(&tiles, &colors, &args));
 }
 
 #[derive(Debug, Clone)]
-struct Element {
-    atomic_number: u8,
-    symbol: String,
-    group: Option<u8>,
-    period: u8,
-    /// 1=s, 2=p, 3=d, 4=f
-    block: u8,
+struct Tile {
+    element: elements::Element,
     graphical_x: u8,
     graphical_y: u8,
     marks: Vec<String>,
 }
 
-fn new_elements(args: &cli::Args) -> HashMap<u8, Element> {
-    [
-        "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S",
-        "Cl", "Ar", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga",
-        "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd",
-        "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Pm",
-        "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os",
-        "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra", "Ac", "Th", "Pa",
-        "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr", "Rf", "Db", "Sg",
-        "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og",
-    ]
-    .into_iter()
-    .enumerate()
-    .map(|(idx, symbol)| {
-        let atomic_number: u8 = (idx + 1).try_into().unwrap();
+fn make_tiles(args: &cli::Args) -> Vec<Tile> {
+    elements::ALL
+        .iter()
+        .map(|element| {
+            let period = element.period;
+            let group = element.group;
+            let atomic_number = element.atomic_number;
 
-        let (period, group) = match atomic_number {
-            1 => (1, Some(1)),
-            2 => (1, Some(18)),
-            3..=10 => (
-                2,
-                Some(match atomic_number {
-                    3 => 1,
-                    4 => 2,
-                    _ => atomic_number + 8,
-                }),
-            ),
-            11..=18 => (
-                3,
-                Some(match atomic_number {
-                    11 => 1,
-                    12 => 2,
-                    _ => atomic_number - 0,
-                }),
-            ),
-            19..=36 => (
-                4,
-                Some(match atomic_number {
-                    19 => 1,
-                    20 => 2,
-                    _ => atomic_number - 18,
-                }),
-            ),
-            37..=54 => (
-                5,
-                Some(match atomic_number {
-                    37 => 1,
-                    38 => 2,
-                    _ => atomic_number - 36,
-                }),
-            ),
-            55..=86 => (
-                6,
-                match atomic_number {
-                    55 => Some(1),
-                    56 => Some(2),
-                    57..=70 => None,
-                    _ => Some(atomic_number - 68),
-                },
-            ),
-            87..=118 => (
-                7,
-                match atomic_number {
-                    87 => Some(1),
-                    88 => Some(2),
-                    89..=102 => None,
-                    _ => Some(atomic_number - 100),
-                },
-            ),
-            _ => (0, None), // 0, 0 for invalid atomic numbers
-        };
-
-        let block = match (group, period, atomic_number) {
-            (Some(1..=2), _, _) | (_, _, 2) => 0,
-            (Some(13..=18), _, _) => 1,
-            (Some(3..=12), _, _) => 2,
-            (None, _, _) => 3,
-            _ => panic!("impossible"),
-        };
-
-        let (graphical_y, graphical_x) = if !args.wide {
-            match (period, group) {
-                (1, Some(18)) => {
-                    if args.helium_in_2 {
-                        (1, 2)
-                    } else {
-                        (1, 18)
+            let (graphical_y, graphical_x) = if !args.wide {
+                match (period, group) {
+                    (1, Some(18)) => {
+                        if args.helium_in_2 {
+                            (1, 2)
+                        } else {
+                            (1, 18)
+                        }
                     }
+                    (6, None | Some(3)) => (period + 3, 4 + atomic_number - 57),
+                    (7, None | Some(3)) => (period + 3, 4 + atomic_number - 89),
+                    (p, Some(g)) => (p, g),
+                    _ => (0, 0),
                 }
-                (6, None | Some(3)) => (period + 3, 4 + atomic_number - 57),
-                (7, None | Some(3)) => (period + 3, 4 + atomic_number - 89),
-                (p, Some(g)) => (p, g),
-                _ => (0, 0),
-            }
-        } else {
-            match (period, group) {
-                (1, Some(18)) => {
-                    if args.helium_in_2 {
-                        (1, 2)
-                    } else {
-                        (1, 32)
+            } else {
+                match (period, group) {
+                    (1, Some(18)) => {
+                        if args.helium_in_2 {
+                            (1, 2)
+                        } else {
+                            (1, 32)
+                        }
                     }
+                    (p, Some(g)) if g <= 2 => (p, g),
+                    (p, Some(g)) => (p, g + 14),
+                    (6, None) => (period, 3 + atomic_number - 57),
+                    (7, None) => (period, 3 + atomic_number - 89),
+                    _ => (0, 0),
                 }
-                (p, Some(g)) if g <= 2 => (p, g),
-                (p, Some(g)) => (p, g + 14),
-                (6, None) => (period, 3 + atomic_number - 57),
-                (7, None) => (period, 3 + atomic_number - 89),
-                _ => (0, 0),
-            }
-        };
+            };
 
-        (
-            atomic_number,
-            Element {
-                atomic_number,
-                symbol: symbol.to_string(),
-                group,
-                period,
-                block,
+            Tile {
+                element: element.clone(),
                 graphical_x,
                 graphical_y,
                 marks: vec![],
-            },
-        )
-    })
-    .collect()
+            }
+        })
+        .collect()
 }
 
 fn calculate_colors(
-    elements: &HashMap<u8, Element>,
+    tiles: &Vec<Tile>,
     args: &cli::Args,
 ) -> (
-    HashMap<u8, Element>,
+    Vec<Tile>,
     HashMap<String /* class name */, String /* color */>,
 ) {
     let mut mark_counter = 0;
@@ -167,17 +84,12 @@ fn calculate_colors(
 
     let mut colors: HashMap<String /* color */, String /* class */> = HashMap::new();
 
-    let sorted_atomic_numbers = {
-        let mut tmp = elements.keys().collect::<Vec<_>>();
-        tmp.sort();
-        tmp
-    };
-
     (
-        sorted_atomic_numbers
+        tiles
             .iter()
-            .map(|&&atomic_number| {
-                let mut el = elements[&atomic_number].clone();
+            .map(|tile| {
+                let mut tile = tile.clone();
+                let el = &tile.element;
 
                 let mut do_mark = |mrk: &cli::MarkRange| {
                     let class = colors.entry(mrk.color.clone()).or_insert_with(|| {
@@ -186,7 +98,7 @@ fn calculate_colors(
                             mark_counter
                         })
                     });
-                    el.marks.push(class.clone());
+                    tile.marks.push(class.clone());
                 };
 
                 for mrk in &args.mark_z {
@@ -215,31 +127,19 @@ fn calculate_colors(
                     }
                 }
 
-                (atomic_number, el)
+                tile
             })
             .collect(),
         colors.into_iter().map(|(k, v)| (v, k)).collect(),
     )
 }
 
-fn generate_svg(
-    elements: &HashMap<u8, Element>,
-    colors: &HashMap<String, String>,
-    args: &cli::Args,
-) -> String {
+fn generate_svg(tiles: &Vec<Tile>, colors: &HashMap<String, String>, args: &cli::Args) -> String {
     let width: u32 = 50;
     let stroke_width: u32 = 1;
 
-    let max_x = elements
-        .values()
-        .map(|element| element.graphical_x)
-        .max()
-        .unwrap_or(0);
-    let max_y = elements
-        .values()
-        .map(|element| element.graphical_y)
-        .max()
-        .unwrap_or(0);
+    let max_x = tiles.iter().map(|tile| tile.graphical_x).max().unwrap_or(0);
+    let max_y = tiles.iter().map(|tile| tile.graphical_y).max().unwrap_or(0);
 
     let (viewbox_x, viewbox_y, viewbox_width, viewbox_height) = if args.pretty_padding {
         (0, 0, (max_x as u32 + 2) * width, (max_y as u32 + 2) * width)
@@ -290,52 +190,47 @@ fn generate_svg(
     svg.push_str("  </style>\n");
     writeln!(svg, r#"  <g class="elements">"#).unwrap();
 
-    let sorted_keys = {
-        let mut keys: Vec<u8> = elements.keys().cloned().collect();
-        keys.sort();
-        keys
-    };
+    for tile in tiles.iter() {
+        let element = &tile.element;
+        let x = tile.graphical_x as u32 * width;
+        let y = tile.graphical_y as u32 * width;
+        write!(
+            svg,
+            r#"    <rect x="{}" y="{}"{}/>"#,
+            x,
+            y,
+            if !tile.marks.is_empty() {
+                format!(" class=\"{}\"", tile.marks.join(" "))
+            } else {
+                String::new()
+            }
+        )
+        .unwrap();
 
-    for atomic_number in sorted_keys.into_iter() {
-        if let Some(element) = elements.get(&atomic_number) {
-            let x = element.graphical_x as u32 * width;
-            let y = element.graphical_y as u32 * width;
+        if !args.no_z {
+            let text_x = x + (3 * width / 50);
+            let text_y = y + (2 * width / 50);
             write!(
                 svg,
-                r#"    <rect x="{}" y="{}"{}/>"#,
-                x,
-                y,
-                if !element.marks.is_empty() {
-                    format!(" class=\"{}\"", element.marks.join(" "))
-                } else {
-                    String::new()
-                }
+                r#"<text x="{}" y="{}" class="Z">{}</text>"#,
+                text_x, text_y, element.atomic_number
             )
             .unwrap();
+        }
 
-            if !args.no_z {
-                let text_x = x + (3 * width / 50);
-                let text_y = y + (2 * width / 50);
-                write!(
-                    svg,
-                    r#"<text x="{}" y="{}" class="Z">{}</text>"#,
-                    text_x, text_y, atomic_number
-                )
-                .unwrap();
-            }
-
-            if args.no_symbols {
-                writeln!(svg).unwrap();
-            } else {
-                let text_x = x + width / 2;
-                let text_y = y + width / 2 + (3 * width / 50);
-                writeln!(
-                    svg,
-                    r#"<text x="{}" y="{}">{}</text>"#,
-                    text_x, text_y, element.symbol
-                )
-                .unwrap();
-            }
+        if args.no_symbols {
+            writeln!(svg).unwrap();
+        } else {
+            let text_x = x + width / 2;
+            let text_y = y + width / 2 + (3 * width / 50);
+            writeln!(
+                svg,
+                r#"<text x="{}" y="{}">{}</text>"#,
+                text_x,
+                text_y,
+                element.symbol.to_string()
+            )
+            .unwrap();
         }
     }
 
@@ -391,3 +286,34 @@ fn generate_svg(
 
     svg
 }
+
+// fn generate_structs(elements: &HashMap<u8, Element>) -> String {
+//     let mut rv = "".to_string();
+
+//     let sorted_elements = {
+//         let mut vals: Vec<Element> = elements.values().cloned().collect();
+//         vals.sort_by(|a, b| match (a.group, b.group) {
+//             (None, Some(_)) => std::cmp::Ordering::Greater,
+//             (Some(_), None) => std::cmp::Ordering::Less,
+//             _ => (a.group, a.atomic_number).cmp(&(b.group, b.atomic_number)),
+//         });
+//         vals
+//     };
+
+//     writeln!(rv, "pub static RAW_ELEMENTS: &[RawElement] = &[").unwrap();
+
+//     // FIXME: sort them by group, not Z – with lanthanoids/actinoids at the end
+
+//     for element in sorted_elements.into_iter() {
+//         writeln!(rv, "  RawElement {{").unwrap();
+//         writeln!(rv, "    atomic_number: {:?},", element.atomic_number).unwrap();
+//         writeln!(rv, "    symbol: {:?},", element.symbol).unwrap();
+//         writeln!(rv, "    oxidation_states_main: &[],").unwrap();
+//         writeln!(rv, "    oxidation_states_other: &[],").unwrap();
+//         writeln!(rv, "  }},").unwrap();
+//     }
+
+//     writeln!(rv, "];").unwrap();
+
+//     rv
+// }
