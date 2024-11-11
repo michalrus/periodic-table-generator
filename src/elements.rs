@@ -1,8 +1,9 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
+use serde::Serialize;
 use std::collections::{BTreeSet, HashMap};
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
 pub struct Symbol(String);
 
 impl std::string::ToString for Symbol {
@@ -11,7 +12,7 @@ impl std::string::ToString for Symbol {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Element {
     pub atomic_number: u8,
     pub symbol: Symbol,
@@ -22,7 +23,7 @@ pub struct Element {
     pub oxidation_states: OxidationStates,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct OxidationStates {
     pub common: BTreeSet<i8>,
     pub notable: BTreeSet<i8>,

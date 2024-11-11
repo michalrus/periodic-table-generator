@@ -17,10 +17,22 @@ fn main() {
 
 fn main_result() -> Result<(), String> {
     let args = cli::Args::parse();
-    let tiles = make_tiles(&args);
-    let (tiles, colors) = calculate_colors(&tiles, &args)?;
-    println!("{}", generate_svg(&tiles, &colors, &args));
-    Ok(())
+    if let Some(dump_query) = args.dump {
+        let mut elements = vec![];
+        for element in elements::ALL.iter() {
+            if dump_query.evaluate_on(element)? {
+                elements.push(element);
+            }
+        }
+        let json = serde_json::to_string_pretty(&elements).map_err(|err| err.to_string())?;
+        println!("{}", json);
+        Ok(())
+    } else {
+        let tiles = make_tiles(&args);
+        let (tiles, colors) = calculate_colors(&tiles, &args)?;
+        println!("{}", generate_svg(&tiles, &colors, &args));
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone)]

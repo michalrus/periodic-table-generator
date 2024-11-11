@@ -63,8 +63,7 @@ mod eval {
                 Expr::LBool(a) => Ok(Value::Bool(*a)),
                 Expr::LInt(a) => Ok(Value::Int(*a)),
                 Expr::Symbol(symb) => match symb.as_str() {
-                    "atomic_number" => Ok(Value::Int(element.atomic_number as i32)),
-                    "z" => Ok(Value::Int(element.atomic_number as i32)),
+                    "atomic_number" | "z" | "Z" => Ok(Value::Int(element.atomic_number as i32)),
                     "group" => Ok(Value::Int(element.group.map_or(-1, |a| a as i32))),
                     "period" => Ok(Value::Int(element.period as i32)),
                     "block" => Ok(Value::Int(element.block as i32)),

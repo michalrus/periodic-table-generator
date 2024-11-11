@@ -46,6 +46,10 @@ pub struct Args {
     #[arg(long, value_name = "COLOR:QUERY_EXPR", value_parser = parse_mark_query, action = ArgAction::Append )]
     pub mark: Vec<MarkQuery>,
 
+    /// Dumps all know data about elements matching QUERY_EXPR as JSON.
+    #[arg(long, value_name = "QUERY_EXPR", value_parser = crate::query::Query::new)]
+    pub dump: Option<crate::query::Query>,
+
     /// Don't maximally downsize the viewbox to the bounding box of the table
     #[arg(long)]
     pub pretty_padding: bool,
