@@ -1,6 +1,6 @@
 use clap::{ArgAction, Parser};
+use regex::Regex;
 use std::borrow::Cow;
-use std::collections::HashSet;
 
 /// Periodic table generator in the SVG format.
 #[derive(Parser, Debug)]
@@ -30,25 +30,21 @@ pub struct Args {
     #[arg(long)]
     pub helium_in_2: bool,
 
-    /// Color certain atomic numbers with an SVG- or CSS-compatible color
+    /// Color specific elements based on a query, can be provided multiple times.
     ///
-    /// A pink f-block example: --mark-z '#ffcccc:57-70,89-102'.
-    ///
-    /// Can be given multiple times, which are OR’ed together.
-    #[arg(long, value_name = "COLOR:RANGE1[,RANGE2…]", value_parser = parse_mark_range(1,118), action = ArgAction::Append )]
-    pub mark_z: Vec<MarkRange>,
-
-    /// Like --mark-z but for groups
-    #[arg(long, value_name = "COLOR:RANGE1[,RANGE2…]", value_parser = parse_mark_range(1,18), action = ArgAction::Append )]
-    pub mark_group: Vec<MarkRange>,
-
-    /// Like --mark-z but for periods
-    #[arg(long, value_name = "COLOR:RANGE1[,RANGE2…]", value_parser = parse_mark_range(1,7), action = ArgAction::Append )]
-    pub mark_period: Vec<MarkRange>,
-
-    /// Like --mark-z but for blocks (0=s, 1=p, 2=d, 3=f)
-    #[arg(long, value_name = "COLOR:RANGE1[,RANGE2…]", value_parser = parse_mark_range(0,3), action = ArgAction::Append )]
-    pub mark_block: Vec<MarkRange>,
+    /// Some examples:{n}
+    ///   - 'pink: z == 1'{n}
+    ///   - 'pink: z >= 11 && z < 19'{n}
+    ///   - 'cyan: group == 5 || (group == 15 && period <= 6)'{n}
+    ///   - 'hsl(240, 100%, 80%): block == 0 || block == 1'{n}
+    ///   - '#ccccff: 1 in oxidation_states.common'{n}
+    ///   - 'lime: {-1, 1} in oxidation_states.common'{n}
+    ///   - 'lime: 0 in (oxidation_states.common + oxidation_states.notable)'{n}
+    ///   - 'lime: 1 in (oxidation_states.predicted)'{n}
+    ///   - 'lime: 1 in (oxidation_states.citation_needed)'{n}
+    ///   - 'wheat: (group - 10) in oxidation_states.common || group in oxidation_states.common'
+    #[arg(long, value_name = "COLOR:QUERY_EXPR", value_parser = parse_mark_query, action = ArgAction::Append )]
+    pub mark: Vec<MarkQuery>,
 
     /// Don't maximally downsize the viewbox to the bounding box of the table
     #[arg(long)]
@@ -62,52 +58,21 @@ impl Args {
 }
 
 #[derive(Debug, Clone)]
-pub struct MarkRange {
+pub struct MarkQuery {
     pub color: String,
-    pub ids: HashSet<u32>,
+    pub query: crate::query::Query,
 }
 
-fn parse_mark_range(min: u32, max: u32) -> impl Fn(&str) -> Result<MarkRange, String> + Clone {
-    move |arg: &str| -> Result<MarkRange, String> {
-        let parts: Vec<&str> = arg.split(':').collect();
-
-        if parts.len() != 2 {
-            return Err("missing colon".to_string());
-        }
-
-        let color = parts[0].to_string();
-
-        let parse_id = |s: &str| -> Result<u32, String> {
-            let id = s
-                .parse::<u32>()
-                .map_err(|_| format!("invalid number: {}", s))?;
-            if id < min || id > max {
-                Err(format!("{} is out of range ({}-{})", id, min, max))
-            } else {
-                Ok(id)
-            }
-        };
-
-        let ids = parts[1]
-            .split(',')
-            .map(|s| {
-                if let Some((start, end)) = s.split_once('-') {
-                    let start = parse_id(start)?;
-                    let end = parse_id(end)?;
-                    let (min, max) = (std::cmp::min(start, end), std::cmp::max(start, end));
-                    Ok((min..=max).collect::<Vec<u32>>())
-                } else {
-                    let id = parse_id(s)?;
-                    Ok::<Vec<u32>, String>(vec![id])
-                }
-            })
-            .collect::<Result<Vec<_>, String>>()?
-            .into_iter()
-            .flatten()
-            .collect::<HashSet<u32>>();
-
-        Ok(MarkRange { color, ids })
-    }
+fn parse_mark_query(arg: &str) -> Result<MarkQuery, String> {
+    let re = Regex::new(r#"(?ms)\s*:\s*"#).unwrap();
+    let mut parts = re.splitn(arg, 2);
+    let color = parts
+        .next()
+        .ok_or("color not found".to_string())?
+        .to_string();
+    let query = parts.next().ok_or("query not found".to_string())?;
+    let query = crate::query::Query::new(query)?;
+    Ok(MarkQuery { color, query })
 }
 
 /// Used for SVG comments (future reproducibility).

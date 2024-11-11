@@ -3,15 +3,24 @@ use std::fmt::Write;
 
 mod cli;
 mod elements;
+mod query;
 
 fn main() {
+    match main_result() {
+        Ok(_) => (),
+        Err(err) => {
+            eprintln!("{}", err);
+            std::process::exit(1)
+        }
+    }
+}
+
+fn main_result() -> Result<(), String> {
     let args = cli::Args::parse();
-
     let tiles = make_tiles(&args);
-
-    let (tiles, colors) = calculate_colors(&tiles, &args);
-
+    let (tiles, colors) = calculate_colors(&tiles, &args)?;
     println!("{}", generate_svg(&tiles, &colors, &args));
+    Ok(())
 }
 
 #[derive(Debug, Clone)]
@@ -74,64 +83,43 @@ fn make_tiles(args: &cli::Args) -> Vec<Tile> {
 fn calculate_colors(
     tiles: &Vec<Tile>,
     args: &cli::Args,
-) -> (
-    Vec<Tile>,
-    HashMap<String /* class name */, String /* color */>,
-) {
-    let mut mark_counter = 0;
+) -> Result<
+    (
+        Vec<Tile>,
+        HashMap<String /* class name */, String /* color */>,
+    ),
+    String,
+> {
+    fn ith_class(i: usize) -> String {
+        format!("mark-{}", i)
+    }
 
     // FIXME: use newtype for color and class
 
-    let mut colors: HashMap<String /* color */, String /* class */> = HashMap::new();
+    let colors: HashMap<String /* class */, String /* color */> = args
+        .mark
+        .iter()
+        .enumerate()
+        .map(|(i, mark)| (ith_class(i), mark.color.clone()))
+        .collect();
 
-    (
-        tiles
-            .iter()
-            .map(|tile| {
-                let mut tile = tile.clone();
-                let el = &tile.element;
+    let tiles: Vec<Tile> = tiles
+        .iter()
+        .map(|tile| {
+            let mut tile = tile.clone();
+            let el = &tile.element;
 
-                let mut do_mark = |mrk: &cli::MarkRange| {
-                    let class = colors.entry(mrk.color.clone()).or_insert_with(|| {
-                        format!("mark-{}", {
-                            mark_counter += 1;
-                            mark_counter
-                        })
-                    });
-                    tile.marks.push(class.clone());
-                };
-
-                for mrk in &args.mark_z {
-                    if mrk.ids.contains(&(el.atomic_number as u32)) {
-                        do_mark(mrk);
-                    }
+            for (i, mrk) in args.mark.iter().enumerate() {
+                if mrk.query.evaluate_on(el)? {
+                    tile.marks.push(ith_class(i));
                 }
+            }
 
-                for mrk in &args.mark_group {
-                    if let Some(group) = el.group {
-                        if mrk.ids.contains(&(group as u32)) {
-                            do_mark(mrk);
-                        }
-                    }
-                }
+            Ok(tile)
+        })
+        .collect::<Result<Vec<_>, String>>()?;
 
-                for mrk in &args.mark_period {
-                    if mrk.ids.contains(&(el.period as u32)) {
-                        do_mark(mrk);
-                    }
-                }
-
-                for mrk in &args.mark_block {
-                    if mrk.ids.contains(&(el.block as u32)) {
-                        do_mark(mrk);
-                    }
-                }
-
-                tile
-            })
-            .collect(),
-        colors.into_iter().map(|(k, v)| (v, k)).collect(),
-    )
+    Ok((tiles, colors))
 }
 
 fn generate_svg(tiles: &Vec<Tile>, colors: &HashMap<String, String>, args: &cli::Args) -> String {
