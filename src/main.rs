@@ -154,8 +154,10 @@ fn generate_svg(tiles: &Vec<Tile>, colors: &HashMap<String, String>, args: &cli:
   </desc>
   <style>
     .elements text.Z {{ font-size: {}px; text-anchor: start; alignment-baseline: before-edge; }}
-    .elements text:not(Z) {{ font-size: {}px; text-anchor: middle; alignment-baseline: middle; }}
-    .elements rect {{ stroke: black; stroke-width: {}; fill: white; width: {}px; height: {}px; }}
+    .elements text:not(.Z) {{ font-size: {}px; text-anchor: middle; alignment-baseline: middle; }}
+    .elements rect {{ stroke-width: {}; height: {}px; }}
+    .elements rect:not([width]) {{ stroke: black; width: {}px; }}
+    .elements rect:not([fill]) {{ fill: white; }}
     .group-numbers text, .period-numbers text {{ font-size: {}px; fill: #808080; text-anchor: middle; alignment-baseline: middle; }}"#,
         cli::escaped_argv().replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;"),
         width / 4,
@@ -182,18 +184,38 @@ fn generate_svg(tiles: &Vec<Tile>, colors: &HashMap<String, String>, args: &cli:
         let element = &tile.element;
         let x = tile.graphical_x as u32 * width;
         let y = tile.graphical_y as u32 * width;
-        write!(
-            svg,
-            r#"    <rect x="{}" y="{}"{}/>"#,
-            x,
-            y,
-            if !tile.marks.is_empty() {
-                format!(" class=\"{}\"", tile.marks.join(" "))
-            } else {
-                String::new()
+
+        write!(svg, "    ").unwrap();
+
+        if tile.marks.len() <= 1 {
+            write!(
+                svg,
+                r#"<rect x="{}" y="{}"{}/>"#,
+                x,
+                y,
+                if !tile.marks.is_empty() {
+                    format!(" class=\"{}\"", tile.marks.join(" "))
+                } else {
+                    String::new()
+                }
+            )
+            .unwrap();
+        } else {
+            let num_marks = tile.marks.len();
+            let stripe_width: f64 = width as f64 / num_marks as f64;
+            for (i, mark) in tile.marks.iter().enumerate() {
+                write!(
+                    svg,
+                    r#"<rect x="{:.5}" y="{}" width="{:.5}" class="{}"/>"#,
+                    x as f64 + i as f64 * stripe_width,
+                    y,
+                    stripe_width,
+                    mark,
+                )
+                .unwrap();
             }
-        )
-        .unwrap();
+            write!(svg, r#"<rect fill="none" x="{}" y="{}"/>"#, x, y,).unwrap();
+        }
 
         if !args.no_z {
             let text_x = x + (3 * width / 50);
