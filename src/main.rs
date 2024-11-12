@@ -308,34 +308,3 @@ fn generate_svg(tiles: &Vec<Tile>, colors: &HashMap<String, String>, args: &cli:
 
     svg
 }
-
-// fn generate_structs(elements: &HashMap<u8, Element>) -> String {
-//     let mut rv = "".to_string();
-
-//     let sorted_elements = {
-//         let mut vals: Vec<Element> = elements.values().cloned().collect();
-//         vals.sort_by(|a, b| match (a.group, b.group) {
-//             (None, Some(_)) => std::cmp::Ordering::Greater,
-//             (Some(_), None) => std::cmp::Ordering::Less,
-//             _ => (a.group, a.atomic_number).cmp(&(b.group, b.atomic_number)),
-//         });
-//         vals
-//     };
-
-//     writeln!(rv, "pub static RAW_ELEMENTS: &[RawElement] = &[").unwrap();
-
-//     // FIXME: sort them by group, not Z – with lanthanoids/actinoids at the end
-
-//     for element in sorted_elements.into_iter() {
-//         writeln!(rv, "  RawElement {{").unwrap();
-//         writeln!(rv, "    atomic_number: {:?},", element.atomic_number).unwrap();
-//         writeln!(rv, "    symbol: {:?},", element.symbol).unwrap();
-//         writeln!(rv, "    oxidation_states_main: &[],").unwrap();
-//         writeln!(rv, "    oxidation_states_other: &[],").unwrap();
-//         writeln!(rv, "  }},").unwrap();
-//     }
-
-//     writeln!(rv, "];").unwrap();
-
-//     rv
-// }
