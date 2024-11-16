@@ -6,11 +6,12 @@ usage() {
   echo >&2 "Usage: chemfig2svg [--atom-sep <NUM_PT>] [--line-width <NUM_PT>]
                    [--margin <NUM_PT>]
                    [--left-margin <NUM_PX>] [--right-margin <NUM_PX>]
+                   [--no-recolor-fill-none]
                    <CHEMFIG_EXPR>"
   exit 1
 }
 
-if ! options=$(getopt -o '' --long atom-sep:,line-width:,margin:,left-margin:,right-margin: -- "$@"); then
+if ! options=$(getopt -o '' --long atom-sep:,line-width:,margin:,left-margin:,right-margin:,no-recolor-fill-none -- "$@"); then
   usage
 fi
 
@@ -29,6 +30,7 @@ line_width=0.8
 margin=5
 left_margin=0
 right_margin=0
+no_recolor_fill_none=
 
 while true; do
   case "$1" in
@@ -51,6 +53,10 @@ while true; do
   --right-margin)
     right_margin="$2"
     shift 2
+    ;;
+  --no-recolor-fill-none)
+    no_recolor_fill_none=1
+    shift 1
     ;;
   --)
     shift
@@ -118,9 +124,14 @@ if [ "$left_margin" != 0 ] || [ "$right_margin" != 0 ]; then
   read -r vb_min_x vb_min_y vb_width vb_height <<<"$viewBox"
   vb_min_x_new=$(echo "$vb_min_x - $left_margin" | bc)
   vb_width_new=$(echo "$vb_width + $left_margin + $right_margin" | bc)
-  xmlstarlet ed -L \
+  xmlstarlet >&2 ed -L \
     -u "//@viewBox" -v "$vb_min_x_new $vb_min_y $vb_width_new $vb_height" \
     chemfig_expr.svg
+fi
+
+# Especially the 3D bonds are colored fill="none", while they should be fill="currentColor".
+if [ -z "$no_recolor_fill_none" ]; then
+  sed >&2 -r 's/fill="none"/fill="currentColor"/g' -i chemfig_expr.svg
 fi
 
 tail -n +3 chemfig_expr.svg
