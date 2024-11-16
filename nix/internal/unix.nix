@@ -45,6 +45,7 @@ in rec {
     pkgs.stdenv.shell
     pkgs.gnused
     pkgs.getopt
+    pkgs.bc
   ];
 
   chemfig2svg = pkgs.writeShellApplication {

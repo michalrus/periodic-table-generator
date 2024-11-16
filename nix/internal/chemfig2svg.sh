@@ -3,11 +3,14 @@
 set -euo pipefail
 
 usage() {
-  echo >&2 "Usage: chemfig2svg [--atom-sep <NUM_PT>] [--line-width <NUM_PT>] [--margin <NUM_PT>] <CHEMFIG_EXPR>" >&2
+  echo >&2 "Usage: chemfig2svg [--atom-sep <NUM_PT>] [--line-width <NUM_PT>]
+                   [--margin <NUM_PT>]
+                   [--left-margin <NUM_PX>] [--right-margin <NUM_PX>]
+                   <CHEMFIG_EXPR>"
   exit 1
 }
 
-if ! options=$(getopt -o '' --long atom-sep:,line-width:,margin: -- "$@"); then
+if ! options=$(getopt -o '' --long atom-sep:,line-width:,margin:,left-margin:,right-margin: -- "$@"); then
   usage
 fi
 
@@ -24,6 +27,8 @@ done
 atom_sep=25
 line_width=0.8
 margin=5
+left_margin=0
+right_margin=0
 
 while true; do
   case "$1" in
@@ -37,6 +42,14 @@ while true; do
     ;;
   --margin)
     margin="$2"
+    shift 2
+    ;;
+  --left-margin)
+    left_margin="$2"
+    shift 2
+    ;;
+  --right-margin)
+    right_margin="$2"
     shift 2
     ;;
   --)
@@ -63,6 +76,7 @@ cd "$temp_dir"
 cat >chemfig_expr.tex <<EOL
 \documentclass[margin=${margin}]{standalone}
 \usepackage{chemfig}
+\usepackage[dvipsnames]{xcolor}
 \begin{document}
 \setchemfig{atom sep=${atom_sep}pt, bond style={line width=${line_width}pt}}
 \chemfig{
@@ -98,5 +112,15 @@ sed >&2 -r 's/font-family:[^;]*;/font-family:sans-serif;/g' -i chemfig_expr.svg
 
 # An xmlstarlet bug:
 sed >&2 -r 's/  \]\]\/>/  ]]>/g' -i chemfig_expr.svg
+
+if [ "$left_margin" != 0 ] || [ "$right_margin" != 0 ]; then
+  viewBox=$(xmlstarlet sel -t -v "//@viewBox" chemfig_expr.svg)
+  read -r vb_min_x vb_min_y vb_width vb_height <<<"$viewBox"
+  vb_min_x_new=$(echo "$vb_min_x - $left_margin" | bc)
+  vb_width_new=$(echo "$vb_width + $left_margin + $right_margin" | bc)
+  xmlstarlet ed -L \
+    -u "//@viewBox" -v "$vb_min_x_new $vb_min_y $vb_width_new $vb_height" \
+    chemfig_expr.svg
+fi
 
 tail -n +3 chemfig_expr.svg
