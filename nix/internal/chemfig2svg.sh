@@ -6,12 +6,12 @@ usage() {
   echo >&2 "Usage: chemfig2svg [--atom-sep <NUM_PT>] [--line-width <NUM_PT>]
                    [--margin <NUM_PT>]
                    [--left-margin <NUM_PX>] [--right-margin <NUM_PX>]
-                   [--no-recolor-fill-none]
+                   [--no-recolor-invisible-paths]
                    <CHEMFIG_EXPR>"
   exit 1
 }
 
-if ! options=$(getopt -o '' --long atom-sep:,line-width:,margin:,left-margin:,right-margin:,no-recolor-fill-none -- "$@"); then
+if ! options=$(getopt -o '' --long atom-sep:,line-width:,margin:,left-margin:,right-margin:,no-recolor-invisible-paths -- "$@"); then
   usage
 fi
 
@@ -30,7 +30,7 @@ line_width=0.8
 margin=5
 left_margin=0
 right_margin=0
-no_recolor_fill_none=
+no_recolor_invisible_paths=
 
 while true; do
   case "$1" in
@@ -54,8 +54,8 @@ while true; do
     right_margin="$2"
     shift 2
     ;;
-  --no-recolor-fill-none)
-    no_recolor_fill_none=1
+  --no-recolor-invisible-paths)
+    no_recolor_invisible_paths=1
     shift 1
     ;;
   --)
@@ -129,9 +129,9 @@ if [ "$left_margin" != 0 ] || [ "$right_margin" != 0 ]; then
     chemfig_expr.svg
 fi
 
-# Especially the 3D bonds are colored fill="none", while they should be fill="currentColor".
-if [ -z "$no_recolor_fill_none" ]; then
-  sed >&2 -r 's/fill="none"/fill="currentColor"/g' -i chemfig_expr.svg
+# Especially the 3D bonds are filled with a <path/> without any fill= or stroke=, and are not visible at night.
+if [ -z "$no_recolor_invisible_paths" ]; then
+  sed >&2 -r 's,(<path\s+d="[^"]*")(\s*/>),\1 fill="currentColor"\2,g' -i chemfig_expr.svg
 fi
 
 tail -n +3 chemfig_expr.svg
