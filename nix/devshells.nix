@@ -36,6 +36,10 @@ in {
       name = "shellcheck";
       category = "dev";
     }
+    {
+      package = pkgs.python3.withPackages (pp: [pp.genanki]);
+      category = "dev";
+    }
   ];
 
   language.c.compiler =

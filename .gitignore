@@ -12,5 +12,8 @@ result-*
 # direnv
 .direnv/
 
+# Anki collections:
+*.apkg
+
 *.svg
 *.tex

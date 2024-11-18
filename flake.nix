@@ -46,10 +46,11 @@
 
         treefmt = {
           projectRootFile = "flake.nix";
-          programs.alejandra.enable = true;
+          programs.alejandra.enable = true; # Nix
+          programs.black.enable = true; # Python
           programs.rustfmt.enable = true;
           programs.shfmt.enable = true;
-          programs.taplo.enable = true;
+          programs.taplo.enable = true; # TOML
           programs.yamlfmt.enable = true;
         };
       };

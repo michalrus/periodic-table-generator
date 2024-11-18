@@ -11,14 +11,11 @@ atomic_number="$1"
 
 element=$(periodic-table-generator --dump "z == $atomic_number" | jq '.[0]')
 
-symbol=$(jq -r '.symbol' <<<"$element")
+# symbol=$(jq -r '.symbol' <<<"$element")
 common=$(jq -r '.oxidation_states | "{" + (.common | unique | join(",")) + "}"' <<<"$element")
 notable=$(jq -r '.oxidation_states | "{" + (.notable | unique | join(",")) + "}"' <<<"$element")
 
-echo >&2 "Z:       $atomic_number"
-echo >&2 "symbol:  $symbol"
-echo >&2 "common:  $common"
-echo >&2 "notable: $notable"
+echo >&2 "$element"
 
 color______question="hsl(230,100%,75%)"
 color______same_all="$color______question"
@@ -33,9 +30,11 @@ svg_raw=$(
                                                       && oxidation_states.notable == $notable" \
     --mark "$color___same_common: z != $atomic_number && oxidation_states.common == $common
                                                       && oxidation_states.notable != $notable" \
-    --mark "$color____all_in_all: z != $atomic_number && ($common + $notable) in (oxidation_states.common + oxidation_states.notable)
+    --mark "$color____all_in_all: z != $atomic_number && ($common + $notable) != {}
+                                                      && ($common + $notable) in (oxidation_states.common + oxidation_states.notable)
                                                       && oxidation_states.common != $common" \
-    --mark "$color_common_in_all: z != $atomic_number && $common in (oxidation_states.common + oxidation_states.notable)
+    --mark "$color_common_in_all: z != $atomic_number && $common != {}
+                                                      && $common in (oxidation_states.common + oxidation_states.notable)
                                                       && oxidation_states.common != $common
                                                       && !(($common + $notable) in (oxidation_states.common + oxidation_states.notable))"
 )
