@@ -39,12 +39,28 @@ model = genanki.Model(
     ),
 )
 
-deck = genanki.Deck(0x61C7D114830D8F68, "All::Chemistry::Oxidation levels")
+deck = genanki.Deck(0x61C7D114830D8F68, "All::Chemistry::Oxidation states")
 
 bash_script_path = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     "gen-flashcards-oxidation-state--one.sh",
 )
+
+
+def make_latex(chosen, bold):
+    latex = []
+    for state in sorted(chosen):
+        if state in bold:
+            latex.append(f"\\boldsymbol{{{state}}}")
+        else:
+            latex.append(f"{{\\scriptstyle {state}}}")
+    if len(latex) == 0:
+        return "\\varnothing"
+    return ", ".join(latex)
+
+
+notes_common = []
+notes_notable = []
 
 for atomic_number in range(1, 118 + 1):
     result = subprocess.run(
@@ -61,34 +77,61 @@ for atomic_number in range(1, 118 + 1):
 
     symbol = f"""_{element["atomic_number"]}{element["symbol"]}"""
 
-    question = "Stopnie utlenienia\n\n" + f"""\\[\\ce{{{symbol}}}\\]\n\n""" + svg
-
     common = set(element["oxidation_states"]["common"])
     notable = set(element["oxidation_states"]["notable"])
-    combined = sorted(common.union(notable))
 
-    latex = []
-    for state in combined:
-        if state in common:
-            latex.append(f"\\boldsymbol{{{state}}}")
-        else:
-            latex.append(f"{{\\scriptstyle {state}}}")
-
-    latex = ", ".join(latex)
-
-    if latex == "":
-        latex = "\\varnothing"
-
-    answer = f"""\\[{latex}\\]"""
-
-    guid = int(int(0x823BFDEB76E98C / 1000) * 1000 + atomic_number)
-
-    note = genanki.Note(
-        model=model,
-        sort_field=f"oxidation states of {symbol}",
-        guid=guid,
-        fields=[question, answer],
+    question_common = (
+        "Stopnie utlenienia – <b>powszechne</b>:\n\n"
+        + f"""\\[\\ce{{{symbol}}}\\]\n\n"""
+        + svg
     )
-    deck.add_note(note)
+    question_notable = (
+        "Stopnie utlenienia – <b>godne uwagi</b>:\n\n"
+        + f"""\\[\\ce{{{symbol}}}\\]\n\n"""
+        + f"""oprócz powszechnych: \\({make_latex(common, common)}\\)<br><br>"""
+        + svg
+    )
+
+    answer_common = (
+        """\\["""
+        + make_latex(common, common)
+        + """\\]\n\n"""
+        + """\\[("""
+        + make_latex(common.union(notable), common)
+        + """)\\]"""
+    )
+    answer_notable = (
+        """\\["""
+        + make_latex(notable, common)
+        + """\\]\n\n"""
+        + """\\[("""
+        + make_latex(common.union(notable), common)
+        + """)\\]"""
+    )
+
+    guid_common = int(int(0x823BFDEB76E98C / 1000) * 1000 + atomic_number)
+    guid_notable = int(int(0x823BFDEB76E98C / 1000) * 1000 + 200 + atomic_number)
+
+    notes_common.append(
+        genanki.Note(
+            model=model,
+            sort_field=f"oxidation states (common) of {symbol}",
+            guid=guid_common,
+            fields=[question_common, answer_common],
+        )
+    )
+    notes_notable.append(
+        genanki.Note(
+            model=model,
+            sort_field=f"oxidation states (notable) of {symbol}",
+            guid=guid_notable,
+            fields=[question_notable, answer_notable],
+        )
+    )
+
+for n in notes_common:
+    deck.add_note(n)
+for n in notes_notable:
+    deck.add_note(n)
 
 genanki.Package(deck).write_to_file("oxidation_states.apkg")

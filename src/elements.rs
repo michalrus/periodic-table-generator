@@ -200,6 +200,18 @@ pub static OXIDATION_STATES: Lazy<HashMap<Symbol, OxidationStates>> = Lazy::new(
                         };
                     }
                 }
+                // There are duplicates in the data, e.g. for krypton, so let’s clean that up:
+                existing
+                    .notable
+                    .retain(|state| !existing.common.contains(state));
+                existing.predicted.retain(|state| {
+                    !existing.common.contains(state) && !existing.notable.contains(state)
+                });
+                existing.citation_needed.retain(|state| {
+                    !existing.common.contains(state)
+                        && !existing.notable.contains(state)
+                        && !existing.predicted.contains(state)
+                });
             }
         }
     }

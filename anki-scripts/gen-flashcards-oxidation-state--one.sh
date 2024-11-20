@@ -17,39 +17,49 @@ notable=$(jq -r '.oxidation_states | "{" + (.notable | unique | join(",")) + "}"
 
 echo >&2 "$element"
 
-color______question="hsl(230,100%,75%)"
-color______same_all="$color______question"
-color___same_common="hsl(195,100%,50%)"
-color____all_in_all="hsl(175,100%,85%)" #"#77EAFB"
-color_common_in_all="hsl( 39, 77%,88%)" #"wheat" #"hsl(175,100%,91%)"
+color_________question="hsl(230,100%,75%)"
+color_________same_all="$color_________question"
+color______same_common="hsl(195,100%,50%)"
+color_common_in_common="hsl(175,100%,80%)"
+color_______all_in_all="hsl(96,80%,85%)"
+color____common_in_all="hsl( 39, 77%,88%)" #"wheat" #"hsl(175,100%,91%)"
 
 svg_raw=$(
   periodic-table-generator \
-    --mark "$color______question: z == $atomic_number" \
-    --mark "$color______same_all: z != $atomic_number && oxidation_states.common == $common
-                                                      && oxidation_states.notable == $notable" \
-    --mark "$color___same_common: z != $atomic_number && oxidation_states.common == $common
-                                                      && oxidation_states.notable != $notable" \
-    --mark "$color____all_in_all: z != $atomic_number && ($common + $notable) != {}
-                                                      && ($common + $notable) in (oxidation_states.common + oxidation_states.notable)
-                                                      && oxidation_states.common != $common" \
-    --mark "$color_common_in_all: z != $atomic_number && $common != {}
-                                                      && $common in (oxidation_states.common + oxidation_states.notable)
-                                                      && oxidation_states.common != $common
-                                                      && !(($common + $notable) in (oxidation_states.common + oxidation_states.notable))"
+    --mark "$color_________question: z == $atomic_number" \
+    --mark "$color_________same_all: z != $atomic_number && oxidation_states.common == $common
+                                                         && oxidation_states.notable == $notable" \
+    --mark "$color______same_common: z != $atomic_number && oxidation_states.common == $common
+                                                         && oxidation_states.notable != $notable" \
+    --mark "$color_common_in_common: z != $atomic_number && $common != {}
+                                                         && $common in oxidation_states.common
+                                                         && $common != oxidation_states.common" \
+    --mark "$color_______all_in_all: z != $atomic_number && ($common + $notable) != {}
+                                                         && ($common + $notable) in (oxidation_states.common + oxidation_states.notable)
+                                                         && !(oxidation_states.common == $common
+                                                                && oxidation_states.notable == $notable)
+                                                         && !($notable == {}
+                                                                && $common in oxidation_states.common)" \
+    --mark "$color____common_in_all: z != $atomic_number && $common != {}
+                                                         && $common in (oxidation_states.common + oxidation_states.notable)
+                                                         && !($common in oxidation_states.common)
+                                                         && oxidation_states.common != $common
+                                                         && !(($common + $notable) in (oxidation_states.common + oxidation_states.notable))"
 )
 
 svg=$(
   head -n -1 <<<"$svg_raw"
-  echo '  <g transform="translate(240, 70)">'
-  echo "    <rect x=\"0\" y=\"0\" width=\"20\" height=\"20\" fill=\"$color______same_all\"></rect>"
+  echo '  <g transform="translate(240, 60)">'
+  echo "    <rect x=\"0\" y=\"0\" width=\"20\" height=\"20\" fill=\"$color_________same_all\"></rect>"
   echo '    <text x="25" y="15" fill="currentColor">all = all</text>'
-  echo "    <rect x=\"0\" y=\"25\" width=\"20\" height=\"20\" fill=\"$color___same_common\"></rect>"
+  echo "    <rect x=\"0\" y=\"25\" width=\"20\" height=\"20\" fill=\"$color______same_common\"></rect>"
   echo '    <text x="25" y="40" fill="currentColor">common = common</text>'
-  echo "    <rect x=\"0\" y=\"50\" width=\"20\" height=\"20\" fill=\"$color____all_in_all\"></rect>"
-  echo '    <text x="25" y="65" fill="currentColor">all ours ⊂ all theirs</text>'
-  echo "    <rect x=\"0\" y=\"75\" width=\"20\" height=\"20\" fill=\"$color_common_in_all\"></rect>"
-  echo '    <text x="25" y="90" fill="currentColor">common ours ⊂ all theirs</text>'
+  echo "    <rect x=\"0\" y=\"50\" width=\"20\" height=\"20\" fill=\"$color_common_in_common\"></rect>"
+  echo '    <text x="25" y="65" fill="currentColor">common ours ⊂ common theirs</text>'
+  echo "    <rect x=\"0\" y=\"75\" width=\"20\" height=\"20\" fill=\"$color_______all_in_all\"></rect>"
+  echo '    <text x="25" y="90" fill="currentColor">all ours ⊂ all theirs</text>'
+  echo "    <rect x=\"0\" y=\"100\" width=\"20\" height=\"20\" fill=\"$color____common_in_all\"></rect>"
+  echo '    <text x="25" y="115" fill="currentColor">common ours ⊂ all theirs</text>'
   # echo "    <text x=\"220\" y=\"15\">common: $common</text>"
   # echo "    <text x=\"220\" y=\"40\">notable: $notable</text>"
   echo '  </g>'
