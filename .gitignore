@@ -11,6 +11,7 @@ result-*
 
 # direnv
 .direnv/
+.envrc.local
 
 # Anki collections:
 *.apkg
