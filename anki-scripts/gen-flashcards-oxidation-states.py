@@ -25,7 +25,7 @@ model = genanki.Model(
     css=inspect.cleandoc(
         """
         body {
-          margin: 10px 10px 0 10px;
+          margin: 1em 10px 0 10px;
           padding: 0;
         }
 
