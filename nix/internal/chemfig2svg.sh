@@ -82,7 +82,47 @@ cd "$temp_dir"
 cat >chemfig_expr.tex <<EOL
 \documentclass[margin=${margin}]{standalone}
 \usepackage{chemfig}
+\usetikzlibrary{decorations.pathmorphing}
 \usepackage[dvipsnames]{xcolor}
+
+\pgfdeclaredecoration{complete sines}{initial}{
+  \state{initial}[
+    width=+0pt,
+    next state=sine,
+    persistent precomputation={
+      \pgfmathsetmacro\matchinglength{
+        \pgfdecoratedinputsegmentlength /
+        int(\pgfdecoratedinputsegmentlength/\pgfdecorationsegmentlength)
+      }
+      \setlength{\pgfdecorationsegmentlength}{\matchinglength pt}
+    }]{}
+  \state{sine}[width=\pgfdecorationsegmentlength]{
+      \pgfpathsine{
+        \pgfpoint
+          {0.25\pgfdecorationsegmentlength}
+          {0.5\pgfdecorationsegmentamplitude}
+      }
+      \pgfpathcosine{
+        \pgfpoint
+          {0.25\pgfdecorationsegmentlength}
+          {-0.5\pgfdecorationsegmentamplitude}
+      }
+      \pgfpathsine{
+        \pgfpoint
+          {0.25\pgfdecorationsegmentlength}
+          {-0.5\pgfdecorationsegmentamplitude}
+      }
+      \pgfpathcosine{
+        \pgfpoint
+          {0.25\pgfdecorationsegmentlength}
+          {0.5\pgfdecorationsegmentamplitude}
+      }
+  }
+  \state{final}{}
+}
+
+\tikzset{wv/.style={decorate,decoration=complete sines}}
+
 \begin{document}
 \setchemfig{atom sep=${atom_sep}pt, bond style={line width=${line_width}pt}}
 \chemfig{
