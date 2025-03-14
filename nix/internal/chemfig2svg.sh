@@ -121,7 +121,9 @@ cat >chemfig_expr.tex <<EOL
   \state{final}{}
 }
 
-\tikzset{wv/.style={decorate,decoration=complete sines}}
+\tikzset{snake_style/.style={decorate,decoration=complete sines}}
+
+\definesubmol{snake}{((-[::90,.5,,,snake_style])-[::-90,.5,,,snake_style])}
 
 \begin{document}
 \setchemfig{atom sep=${atom_sep}pt, bond style={line width=${line_width}pt}}
