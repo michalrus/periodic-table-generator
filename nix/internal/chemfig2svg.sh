@@ -82,6 +82,7 @@ cd "$temp_dir"
 cat >chemfig_expr.tex <<EOL
 \documentclass[margin=${margin}]{standalone}
 \usepackage{chemfig}
+\usepackage{mhchem}
 \usetikzlibrary{decorations.pathmorphing}
 \usepackage[dvipsnames]{xcolor}
 
@@ -123,6 +124,7 @@ cat >chemfig_expr.tex <<EOL
 
 \tikzset{snake_style/.style={decorate,decoration=complete sines}}
 
+% cut off a functional group / substituent
 \definesubmol{snake}{((-[::90,.5,,,snake_style])-[::-90,.5,,,snake_style])}
 
 \begin{document}

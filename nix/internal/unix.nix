@@ -36,6 +36,7 @@ in rec {
       with ps; [
         scheme-small
         chemfig
+        mhchem
         simplekv
         standalone
         dvisvgm
