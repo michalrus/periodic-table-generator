@@ -128,7 +128,11 @@ cat >chemfig_expr.tex <<EOL
 \definesubmol{snake}{((-[::90,.5,,,snake_style])-[::-90,.5,,,snake_style])}
 
 \begin{document}
-\setchemfig{atom sep=${atom_sep}pt, bond style={line width=${line_width}pt}}
+\setchemfig{atom sep=${atom_sep}pt,
+            bond style={line width=${line_width}pt},
+            cram width=0.75ex,
+            cram dash width=0.5pt,
+            cram dash sep=1.0pt}
 \chemfig{
 ${chemfig_expr}
 }
